@@ -17,7 +17,7 @@ async def on_message(message):
         return
 
     if not message.content.startswith('!'):
-        message.content = message.content.lower()
+        message.content = message.content.lower().strip()
         
     global challenged
 
@@ -70,6 +70,10 @@ async def on_message(message):
     if message.content.startswith('helo'):
         await message.add_reaction('❓')
         await message.channel.send('co chceš? 🧐')
+
+    # i am dead
+    if message.content.startswith(('i am dead', 'im dead', 'i\'m dead')):
+        await message.channel.send('Target sherminated')
 
     # je ti něco
     if 'je ti něco' in message.content:
