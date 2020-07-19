@@ -5,7 +5,7 @@ import asyncio
 import discord
 from discord.utils import get
 import youtube_dl
-from youtube_search import YoutubeSearch
+from youtubesearchpython import SearchVideos
 
 song_path = os.path.abspath(__file__)
 song_path = song_path.rsplit('/', 2)[0] + '/songs/'
@@ -132,8 +132,8 @@ async def play(ctx, url, *args):
             os.chdir(working_dir)
     # PLAY FROM YOUTUBE - SEARCH
     else:
-        url = YoutubeSearch(f'{url} {" ".join(args)}', max_results=1).to_dict()
-        url = 'https://www.youtube.com' + url[0]['url_suffix']
+        url = SearchVideos(f'{url} {" ".join(args)}', offset=1, mode='dict', max_results=1)
+        url = url.result()['search_result'][0]['link']
 
         # delete previous
         for file in os.listdir():
@@ -166,8 +166,11 @@ async def play(ctx, url, *args):
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.3
 
+    # control message
     global control_message
-    control_message = await ctx.send(f"Playing: {song_name} 🎵")
+    if control_message != '':
+        await control_message.edit( content=str(control_message.content).strip('++ ') )
+    control_message = await ctx.send(f"++ Playing: {song_name} 🎵")
     await control_message.add_reaction(emoji_play_stop)
     await control_message.add_reaction(emoji_repeat)
 
@@ -210,8 +213,10 @@ async def on_reaction_add(reaction, user):
     if str(reaction.emoji) == emoji_play_stop:
         voice = get(client.voice_clients, guild=reaction.message.channel.guild)
 
-        if voice and voice.is_connected():
+        if voice and voice.is_playing():
             voice.pause()
+        elif voice and voice.is_paused():
+            voice.resume()
     elif str(reaction.emoji) == emoji_repeat:
         global repeat
         repeat = True
@@ -226,8 +231,20 @@ async def on_reaction_remove(reaction, user):
     if str(reaction.emoji) == emoji_play_stop:
         voice = get(client.voice_clients, guild=reaction.message.channel.guild)
 
-        if voice and voice.is_paused():
+        if voice and voice.is_playing():
+            voice.pause()
+        elif voice and voice.is_paused():
             voice.resume()
     elif str(reaction.emoji) == emoji_repeat:
-        global repeat
-        repeat = False
+        if reaction.count == 1:
+            global repeat
+            repeat = False
+
+########################################################################
+
+@client.command(aliases=['pa'])
+async def panel(ctx):
+    global control_message
+    control_message = await ctx.send(control_message.content)
+    await control_message.add_reaction(emoji_play_stop)
+    await control_message.add_reaction(emoji_repeat)
