@@ -168,8 +168,10 @@ async def play(ctx, url, *args):
 
     # control message
     global control_message
-    if control_message != '':
+    try:
         await control_message.edit( content=str(control_message.content).strip('++ ') )
+    except:
+        pass
     control_message = await ctx.send(f"++ Playing: {song_name} 🎵")
     await control_message.add_reaction(emoji_play_stop)
     await control_message.add_reaction(emoji_repeat)
