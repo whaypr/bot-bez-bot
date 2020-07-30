@@ -1,7 +1,6 @@
 from bot import client
 
 import math as m
-
 from discord.utils import get
 
 @client.command(aliases=['m'])
