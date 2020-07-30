@@ -5,6 +5,8 @@ from discord.utils import get
 
 @client.command(aliases=['m'])
 async def math(ctx, *args):
+    '''Performs basic math operations'''
+
     expr = ' '.join(args)
 
     fuctions = {
@@ -30,18 +32,20 @@ async def math(ctx, *args):
 
 @client.command(aliases=['c'])
 async def clear(ctx):
+    '''Clears all messages in channel'''
     await ctx.channel.purge()
     await ctx.send('Uklizeno ✅')
 
 
 @client.command(aliases=['h'])
 async def hello(ctx, *args):
+    '''Says hello to whatever you specify'''
     await ctx.channel.purge(limit=1)
     for arg in args:
         await ctx.send(f'Hello, {arg}! 👋')
 
 
-@client.command(aliases=['e'])
+@client.command(aliases=['e'], hidden=True)
 async def echo(ctx, *args):
     await ctx.channel.purge(limit=1)
     res = ' '.join(args)

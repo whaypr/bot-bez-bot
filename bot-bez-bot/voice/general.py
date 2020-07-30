@@ -10,18 +10,10 @@ from discord.ext import commands
 import os
 from discord.utils import get
 
+######################################################################################
+
 playlist_path = os.path.abspath(__file__)
 playlist_path = playlist_path.rsplit('/', 1)[0] + '/playlist/'
-
-working_dir = os.getcwd()
-
-emoji_play_stop = '🔴'
-emoji_repeat = '🔂'
-
-control_message = ''
-song_name = ''
-
-######################################################################################
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -29,8 +21,8 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 ytdl_format_options = {
     'format': 'bestaudio/best',
     #'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'outtmpl': '%(title)s.%(ext)s',
-    'restrictfilenames': True,
+    'outtmpl': playlist_path + '/' + '%(title)s.%(ext)s',
+    #'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
     'ignoreerrors': False,
@@ -57,9 +49,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    def download_song(self, url):
+    def download_song(self, *args):
         try:
-            ytdl.download([url])
+            ytdl.download([' '.join(args)])
         except:
             raise Exception('Not a valid link!')
 
@@ -77,43 +69,53 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 ######################################################################################
 
+emoji_play_stop = '🔴'
+emoji_repeat = '🔂'
+
+control_message = ''
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(aliases=['j'])
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
+    async def join(self, ctx, *, channel: discord.VoiceChannel=None):
         """Joins a voice channel"""
-        
-        # channel = ctx.author.voice.channel
 
-        if ctx.voice_client is not None:
-            await ctx.voice_client.move_to(channel)
-        else:
-            await channel.connect()
+        if channel is None and ctx.author.voice:
+            channel = ctx.author.voice.channel
+
+        try:
+            if ctx.voice_client is not None:
+                await ctx.voice_client.move_to(channel)
+            else:
+                await channel.connect()
+        except:
+            await ctx.send('I don\'t know, where to connect')
+            return
 
         await ctx.send(f'Joined: {channel}')
 
     @commands.command(aliases=['l'])
-    async def leave(self, ctx, *, channel: discord.VoiceChannel):
+    async def leave(self, ctx):
+        """Leaves a voice channel"""
+
         try:
             await ctx.voice_client.disconnect()
-            await ctx.send(f'Left: {channel}')
-        except:
+            await ctx.send('Channel left')
+        except Exception as e:
+            print(e)
             await ctx.send('Cannot leave any channel')
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, query, *args):
-        global song_name, repeat
+        """Plays song from playlist or from youtube (search or link)"""
+
+        global repeat
         repeat = False
-        is_queue = False
 
         # PLAY FROM PLAYLIST
         if query.isnumeric():
-            """Plays a file from the local filesystem"""
-
-            os.chdir(playlist_path)
-
             try:
                 song = os.listdir(playlist_path)[int(query)]
                 song_name = song.replace('.mp3', '').replace('.webm', '')
@@ -121,13 +123,9 @@ class Music(commands.Cog):
                 await ctx.send('Not in playlist!')
                 return
 
-            player = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song))
-
-            os.chdir(working_dir)
+            player = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(playlist_path + '/' + song))
         # PLAY FROM YOUTUBE - LINK / SEARCH
         else:
-            """Streams from a url (same as yt, but doesn't predownload)"""
-
             async with ctx.typing():
                 player = await YTDLSource.from_url(f'{query} {" ".join(args)}', loop=self.bot.loop, stream=True)
                 song_name = player.title
@@ -135,7 +133,6 @@ class Music(commands.Cog):
 
         # play
         ctx.voice_client.play(player)
-        #ctx.voice_client.play(player, after=repeat_wrapper)
 
         # control message
         global control_message
@@ -146,36 +143,6 @@ class Music(commands.Cog):
         control_message = await ctx.send(f"++ Playing: {song_name} 🎵")
         await control_message.add_reaction(emoji_play_stop)
         await control_message.add_reaction(emoji_repeat)
-
-    @commands.command(aliases=['pt'])
-    async def playlist(ctx, option, url=''):
-        os.chdir(playlist_path)
-
-        if option in ('add', 'ad', 'a'):
-            await ctx.send('Adding song to playlist...')
-            try:
-                YTDLSource.download_song(url)
-            except Exception as e:
-                await ctx.send(e)
-                return
-
-            await ctx.send('Song successfully added to playlist ✅')
-        elif option in ('remove', 'remov', 'rm', 'r'):
-            try:
-                song = os.listdir()[int(url)]
-                os.remove(song)
-                await ctx.send(f'{song} has been removed from playlist ❌')
-            except:
-                await ctx.send('Not in playlist!')
-        elif option in ('show', 'sho', 's'):
-            pt = [
-                f'{num}:   👉  {song.replace(".mp3", "").replace(".webm", "")}  👈'
-                for num, song in enumerate(os.listdir())
-            ]
-
-            await ctx.send('\n'.join(pt))
-
-        os.chdir(working_dir)
 
     @play.before_invoke
     async def ensure_voice(self, ctx):
@@ -190,6 +157,48 @@ class Music(commands.Cog):
                 raise commands.CommandError("Author not connected to a voice channel.")
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
+
+    @commands.command(aliases=['pt'])
+    async def playlist(self, ctx, option, *args):
+        '''Adds/removes/shows song(s) to/from/in playlist'''
+
+        # ADD
+        if option in ('add', 'ad', 'a'):
+            try:
+                YTDLSource.download_song(*args)
+            except Exception as e:
+                await ctx.send(e)
+                return
+
+            await ctx.send('Song successfully added to playlist ✅')
+        # REMOVE
+        elif option in ('remove', 'remov', 'rm', 'r'):
+            try:
+                song = os.listdir(playlist_path)[int(args[0])]
+                os.remove(playlist_path + '/' + song)
+                await ctx.send(f'{song} has been removed from playlist ❌')
+            except:
+                await ctx.send('Not in playlist!')
+        # SHOW
+        elif option in ('show', 'sho', 's'):
+            pt = [
+                f'{num}:   👉  {song.replace(".mp3", "").replace(".webm", "")}  👈'
+                for num, song in enumerate(os.listdir(playlist_path))
+            ]
+
+            await ctx.send('\n'.join(pt))
+
+    @commands.command(aliases=['pa'])
+    async def panel(ctx):
+        """Shows music control panel"""
+
+        global control_message
+        control_message = await ctx.send(control_message.content)
+        await control_message.add_reaction(emoji_play_stop)
+        await control_message.add_reaction(emoji_repeat)
+
+
+client.add_cog(Music(client))
 
 ######################################################################################
 
@@ -228,14 +237,3 @@ async def on_reaction_remove(reaction, user):
         if reaction.count == 1:
             global repeat
             repeat = False
-
-
-@client.command(aliases=['pa'])
-async def panel(ctx):
-    global control_message
-    control_message = await ctx.send(control_message.content)
-    await control_message.add_reaction(emoji_play_stop)
-    await control_message.add_reaction(emoji_repeat)
-
-
-client.add_cog(Music(client))
