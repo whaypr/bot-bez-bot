@@ -21,7 +21,7 @@ async def on_message(message):
         
     global challenged
 
-    # cenzura
+    # censorship
     is_bad = False
     blacklist = [
         'kurv', 'kurev', 'píč', 'pič', 'prdel', 'debil', 'idiot', 'kokot', 'hajzl', 'čurák', 'curak', 'curac', 'šulin', 'sulin',
@@ -45,7 +45,7 @@ async def on_message(message):
         await message.channel.send(f'Nemluv sprostě!')
         await message.channel.send(f'<@{message.author.id}> Se snaží říct:\n {message.content}')
 
-    # xd
+    # 'xd'
     if 'xd' in message.content:
         reaccs_msg = [
             'XDD', 'xDDDD', 'xxxDDDD', 'XDDdd', 'xdddd rofl',
@@ -66,20 +66,20 @@ async def on_message(message):
         index = randrange(len(reaccs_emoji))
         await message.add_reaction(reaccs_emoji[index])
 
-    # helo
+    # 'helo'
     if message.content.startswith('helo'):
         await message.add_reaction('❓')
         await message.channel.send('co chceš? 🧐')
 
-    # i am dead
+    # 'i am dead'
     if message.content.startswith(('i am dead', 'im dead', 'i\'m dead')):
         await message.channel.send('Target sherminated')
 
-    # je ti něco
+    # 'je ti něco'
     if 'je ti něco' in message.content:
         await message.channel.send('no to mu je teda')
 
-    # jsem dobrej
+    # 'jsem dobrej'
     if message.content.startswith('jsem dobrej'):
         if str(message.author).startswith('War-dye'):
             await message.add_reaction('😍')
@@ -88,32 +88,32 @@ async def on_message(message):
             await message.add_reaction('👎')
             await message.channel.send('haha, ne 🙂')
     
-    # OZNAČENÍ BOTA
+    # AT BOT
     if message.content.startswith(bot_ids[0]) or message.content.startswith(bot_ids[1]):
         message.content = message.content.strip(bot_ids[0] + ' ')
         message.content = message.content.strip(bot_ids[1] + ' ')
 
-        # pozdrav
+        # greeting
         if message.content.startswith( ('ahoj', 'čus', 'čau', 'zdar', 'nazdar', 'zdraví','hello', 'hi', 'greetings') ):
             await message.add_reaction('👋')
             await message.channel.send(f'<@{message.author.id}> Ahoj!')
-        # kde máš boty 
+        # 'kde máš boty' 
         elif message.content.startswith('kde máš boty'):
             challenged = False
             await message.channel.send(f'<@{message.author.id}> Ve sklepě')
-        # tě sejmu
+        # 'tě sejmu'
         elif message.content.startswith('tě sejmu'):
             challenged = True
             await message.channel.send(f'<@{message.author.id}> Are you challenging me, human?!')
-        # tě sejmu - ano
+        # tě sejmu - 'ano'
         elif message.content.startswith( ('jo', 'yes', 'ano', 'y', 'jop', 'jup') ) and challenged:
             challenged = False
             await message.channel.send(f'<@{message.author.id}> I will find you and i will destroy you')
-        # tě sejmu - ne
+        # tě sejmu - 'ne'
         elif message.content.startswith( ('ne', 'no', 'n', 'nope') ) and challenged:
             challenged = False
             await message.channel.send(f'<@{message.author.id}> Máš stěstí') 
-        # jiné
+        # other
         else:
             challenged = False
             await message.channel.send(f'<@{message.author.id}> ?')

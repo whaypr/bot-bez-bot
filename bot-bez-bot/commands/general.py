@@ -20,12 +20,12 @@ async def math(ctx, *args):
         #res = eval(expr) # for exploits :)
     except Exception as e:
         print(e)
-        res = 'Neplatný výraz, bráško'
+        res = 'Neplatný výraz'
 
     if res == 69:
-        res = str(res) + ' 😂'
-    elif res == 420:
-        res = str(res) + ' BLAZE IT!'
+        res = str(res) + ' 😂👌'
+    elif res == 1337:
+        res = str(res) + ', haxxorrrrrz!'
 
     await ctx.send(res)
 
@@ -33,6 +33,7 @@ async def math(ctx, *args):
 @client.command(aliases=['c'])
 async def clear(ctx):
     '''Clears all messages in channel'''
+
     await ctx.channel.purge()
     await ctx.send('Uklizeno ✅')
 
@@ -40,6 +41,7 @@ async def clear(ctx):
 @client.command(aliases=['h'])
 async def hello(ctx, *args):
     '''Says hello to whatever you specify'''
+
     await ctx.channel.purge(limit=1)
     for arg in args:
         await ctx.send(f'Hello, {arg}! 👋')
@@ -47,6 +49,8 @@ async def hello(ctx, *args):
 
 @client.command(aliases=['e'], hidden=True)
 async def echo(ctx, *args):
+    '''Sends message as bot'''
+
     await ctx.channel.purge(limit=1)
     res = ' '.join(args)
     await ctx.send(res)
