@@ -189,7 +189,7 @@ class Music(commands.Cog):
             await ctx.send('\n'.join(pt))
 
     @commands.command(aliases=['pa'])
-    async def panel(ctx):
+    async def panel(self, ctx):
         """Shows music control panel"""
 
         global control_message
