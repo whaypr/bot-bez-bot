@@ -12,6 +12,9 @@ async def my_background_task():
         timestamp_now = datetime.datetime.now().timestamp() - 7200 # timezone, 2 hours = 7200 seconds
 
         for ch in client.get_all_channels():
+            if str(ch.guild.id) == '758282865418698762':
+                continue
+
             if str(ch.type) == 'text':
                 messages = await ch.history(limit=100).flatten()
 

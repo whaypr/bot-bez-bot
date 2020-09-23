@@ -84,12 +84,13 @@ async def on_message(message):
 
     # 'jsem dobrej'
     if message.content.startswith('jsem dobrej'):
-        if str(message.author).startswith('War-dye'):
+        if randrange(100) < 50:
             await message.add_reaction('😍')
             await message.channel.send('jasně, že jo')
         else:
             await message.add_reaction('👎')
             await message.channel.send('haha, ne 🙂')
+
 
     # cinema
     if message.content.startswith('co dávají v kině'):
