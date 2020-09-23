@@ -1,1 +1,1 @@
-worker: python bot-bez-bot/
+worker: python bot/
