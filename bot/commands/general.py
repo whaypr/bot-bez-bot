@@ -1,10 +1,14 @@
 from bot import client
+from aws import aws_s3, s3_sync, simpnotes
 
 import math as m
-import re
+
 from random import randrange
+import re
 import requests
 from bs4 import BeautifulSoup
+
+from tabulate import tabulate
 
 from discord.utils import get
 
@@ -163,6 +167,71 @@ async def menza(ctx, *args):
             res += f'⚖️ {weight} 🍔 {name} 💵 {price}\n'
 
     await ctx.send(res)
+
+@client.command(aliases=['s'], hidden=True)
+async def simp(ctx, *args):
+    if str(ctx.channel.id) != '757945999246229564':
+        return
+
+    async def show_simpnotes():
+        if simpnotes == {}:
+            await ctx.send('Simptýsek je prázdný')    
+        else:
+            res = tabulate(simpnotes, simpnotes.keys(), tablefmt="grid")
+            await ctx.send(f'```\n{res}```\n')
+
+    if len(args) == 0:
+        await show_simpnotes()
+        return
+
+    if args[0].lower() == 'c':
+        try:
+            tmp = re.split( r'[c] ', ' '.join(args) )
+            
+            simp = tmp[1].upper()
+            simpnotes.pop(simp)
+        except:
+            await ctx.send('Nelze odebrat')
+            return
+
+        await ctx.send(f'{simp} už nikoho nesimpuje 😦')
+    else:
+        await ctx.channel.purge(limit=1)
+        
+        try:
+            tmp = re.split( r' ([+-]) ', ' '.join(args) )
+
+            simp = tmp[0].upper()
+            operation = tmp[1]
+            simped = tmp[2][0].upper() + tmp[2][1:].lower()
+        except:
+            await ctx.send('Šptaný formát')    
+            return
+
+        if operation == '+':
+            try:
+                simpnotes[simp].append(simped)
+            except:
+                simpnotes[simp] = [simped]
+
+            await ctx.send(f'{simp} simpuje {simped.upper()} 🥰') 
+        elif operation == '-':
+            try:
+                simpnotes[simp].remove(simped)
+            except:
+                await ctx.send('Nelze odebrat')
+                return
+
+            if simpnotes[simp] == []:
+                del simpnotes[simp]
+            
+            await ctx.send(f'{simp} už nesimpuje {simped.upper()} 💔') 
+        else:
+            await ctx.send('Neplatná operace')    
+            return
+
+    s3_sync(simpnotes)
+    await show_simpnotes()
 
 
 @client.command(aliases=['e'], hidden=True)
