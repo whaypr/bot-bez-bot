@@ -24,30 +24,6 @@ async def on_message(message):
         
     global challenged
 
-    # censorship
-    is_bad = False
-    blacklist = [
-        'kurv', 'kurev', 'píč', 'pič', 'prdel', 'debil', 'idiot', 'kokot', 'hajzl', 'čurák', 'curak', 'curac', 'šulin', 'sulin',
-        'srač', 'srac', 'sráč', 'imbecil', 'kund', 'hovn', 'hoven', 'kokot', 'kokůt', 'kokut', 'kkt', 'mrd', 'mrda', 'šuk', 'prc', 'vojet',
-        'vojed', 'dement', 'buzer',
-        'bitch', 'cock', 'ass', 'suck', 'fuck', 'cum', 'nigg', 'dick', 'dong',
-        'pexes'
-    ]
-    replaces = [
-        'mňauky', 'haf', 'baf', 'fuj', 'hihi', '...', 'nope' 
-    ]
-
-    for bad_word in blacklist:
-        if bad_word in str(message.content):
-            index = randrange(len(replaces))
-            message.content = re.sub(f'[a-zěščřžýáíéůú]*{bad_word}[a-zěščřžýáíéůú]*', f'*{replaces[index]}*', str(message.content))
-            is_bad = True
-    
-    if is_bad:
-        await message.channel.purge(limit=1)
-        await message.channel.send(f'Nemluv sprostě!')
-        await message.channel.send(f'<@{message.author.id}> Se snaží říct:\n {message.content}')
-
     # 'xd'
     if 'xd' in message.content:
         reaccs_msg = [
