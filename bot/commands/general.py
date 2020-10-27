@@ -41,7 +41,7 @@ async def math(ctx, *args):
 
 @client.command(aliases=['c'])
 async def clear(ctx):
-    '''Clears all messages in channel'''
+    '''Clears messages in channel'''
 
     await ctx.channel.purge()
     await ctx.send('Uklizeno ✅')

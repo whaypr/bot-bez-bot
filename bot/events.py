@@ -45,18 +45,9 @@ async def on_message(message):
         index = randrange(len(reaccs_emoji))
         await message.add_reaction(reaccs_emoji[index])
 
-    # 'helo'
-    if message.content.startswith('helo'):
-        await message.add_reaction('❓')
-        await message.channel.send('co chceš? 🧐')
-
     # 'i am dead'
     if message.content.startswith(('i am dead', 'im dead', 'i\'m dead')):
         await message.channel.send('Target sherminated')
-
-    # 'je ti něco'
-    if 'je ti něco' in message.content:
-        await message.channel.send('no to mu je teda')
 
     # 'jsem dobrej'
     if message.content.startswith('jsem dobrej'):
