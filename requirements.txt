@@ -20,7 +20,7 @@ six==1.15.0
 soupsieve==2.0.1
 tabulate==0.8.7
 typing-extensions==3.7.4.3
-urllib3==1.25.10
+urllib3==1.26.5
 websockets==8.1
 yarl==1.6.0
 youtube-dl==2020.9.20
