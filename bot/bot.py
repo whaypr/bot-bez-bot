@@ -1,2 +1,5 @@
 from discord.ext import commands
-client = commands.Bot('!')
+
+bot_prefix = '°'
+
+client = commands.Bot(bot_prefix)
