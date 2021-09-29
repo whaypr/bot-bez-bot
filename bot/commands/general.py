@@ -1,19 +1,18 @@
 from bot import client
 from aws import aws_s3, s3_sync, simpnotes
 
-import math as m
-
-from random import randrange, choice
-import re
-import requests
-from bs4 import BeautifulSoup
-
-from tabulate import tabulate
-
 from discord.utils import get
 from discord import Embed
 
+import math as m
+from random import randrange, choice
+import re
+
+import requests
+from bs4 import BeautifulSoup
 import feedparser
+
+from tabulate import tabulate
 
 @client.command(aliases=['m'])
 async def math(ctx, *args):
@@ -34,10 +33,12 @@ async def math(ctx, *args):
         print(e)
         res = 'Neplatný výraz'
 
-    if res == 69:
+    if res == 42:
+        res = 'you know what\'s the answer'
+    elif res == 69:
         res = str(res) + ' 😂👌'
     elif res == 1337:
-        res = str(res) + ', haxxorrrrrz!'
+        res = str(res) + ', haxx0rrrrrz!'
 
     await ctx.send(res)
 
