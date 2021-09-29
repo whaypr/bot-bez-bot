@@ -3,7 +3,7 @@ from aws import aws_s3, s3_sync, simpnotes
 
 import math as m
 
-from random import randrange
+from random import randrange, choice
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -11,6 +11,9 @@ from bs4 import BeautifulSoup
 from tabulate import tabulate
 
 from discord.utils import get
+from discord import Embed
+
+import feedparser
 
 @client.command(aliases=['m'])
 async def math(ctx, *args):
@@ -232,6 +235,29 @@ async def simp(ctx, *args):
 
     s3_sync(simpnotes)
     await show_simpnotes()
+
+
+@client.command(aliases=['rajc', 'rce'])
+async def rajce(ctx, *args):
+    '''Random fotka z brontíckého Rajčete'''
+
+    account = feedparser.parse("https://brontici-rokycany.rajce.idnes.cz/?rss=news")
+    album_link = choice(account.entries).link
+
+    album = feedparser.parse(f"{album_link}/?rss=media")
+    image_link = choice(album.entries).media_thumbnail[0]['url']
+
+    title = album_link.replace('https://brontici-rokycany.rajce.idnes.cz/', '')
+    title = ''.join([
+        x.replace('_', ' ')
+        for x in title
+        if not x.isdigit() and x not in ('.', ',', '-', '/')
+    ]).strip()
+
+    embed = Embed(title=f'📷  {title}  📷', description=f'🔗 [odkaz na album]({album_link})', color=0xf82222)
+    embed.set_image(url=image_link)
+
+    await ctx.send(embed=embed)
 
 
 @client.command(aliases=['e'], hidden=True)
