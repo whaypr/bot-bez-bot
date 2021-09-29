@@ -2,6 +2,7 @@ from bot import client
 from aws import aws_s3, s3_sync, simpnotes
 
 import math as m
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -113,7 +114,37 @@ async def menza(ctx, *args):
             res += f'⚖️ {weight} 🍔 {name} 💵 {price}\n'
 
     await ctx.send(res)
+
+
+## kino ##
+@client.command(aliases=['ki', 'kin'])
+async def kino(ctx, *args):
+    '''Program sušického kina'''
+    link = 'https://www.kinosusice.cz/klient-2366/kino-382/stranka-13561'
+
+    page = requests.get(link)
+    soup = BeautifulSoup(page.content, 'html.parser')
+
+    program = soup.find_all('div', class_='program')
+
+    res = ''
+    for i, movie in enumerate(program):
+        name = movie.find('h3').text
+
+        s_time = movie.find('div', class_='time')
+        day = s_time.find(class_='day').text.strip()
+        hour = s_time.find(class_='time').text.strip()
+
+        price = movie.find(class_=re.compile('price')).text
+
+        res += f'📅 {day} 🕒 {hour} 🎞 {name} 💵 {price}\n'
+
+        if i == 15: # message is too long, must be sent partially
+            await ctx.send(res)
+            res = ''
     
+    await ctx.send(res)
+
 
 ## SIMP ##
 @client.command(aliases=['s'], hidden=True)

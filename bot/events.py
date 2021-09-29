@@ -1,56 +1,56 @@
 from bot import client
 
-from random import randrange
+from random import randrange, choice
 import re
 
 import requests
 from bs4 import BeautifulSoup
 
+
 bot_ids = ['<@!729654314728947782>', '<@729654314728947782>']
+
+haha_msg = [
+    'XDD', 'xDDDD', 'xxxDDDD', 'XDDdd', 'xdddd rofl',
+    'LMAO', 'LMAOOOo', 'lMaooooOoo',
+    'LOl xDDD', 'lolololo', 'LOOOOOl',
+    'nice one XD', 'so funny 😆', 'si zabil! 😵',
+    '😂 🤣 😂 🤣 😂 🤣', '🤣 👌', '😄 😁 😆 😅 😂 🤣',
+]
+haha_react = [
+    '😄', '😁', '😆', '😅', '😂', '🤣',
+    '😝', '😜', '🤪',
+    '👌', '❤️' , '🤯', '🙀'
+]
+
+unknown_msg = ['?', 'Co pro Vás mohu udělat, pane?', 'co chceš?', 'huh', 'neruš', ':)']
+
 challenged = False
 
+
+## ON READY ##
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
 
 
+## ON MESSAGE ##
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
 
-    if not message.content.startswith('!'):
+    if not message.content.startswith('°'):
         message.content = message.content.lower().strip()
         
     global challenged
 
     # 'xd'
     if 'xd' in message.content:
-        reaccs_msg = [
-            'XDD', 'xDDDD', 'xxxDDDD', 'XDDdd', 'xdddd rofl',
-            'LMAO', 'LMAOOOo', 'lMaooooOoo',
-            'LOl xDDD', 'lolololo', 'LOOOOOl',
-            'nice one XD', 'so funny 😆', 'si zabil! 😵',
-            '😂 🤣 😂 🤣 😂 🤣', '🤣 👌', '😄 😁 😆 😅 😂 🤣',
-        ]
-        reaccs_emoji = [
-            '😄', '😁', '😆', '😅', '😂', '🤣',
-            '😝', '😜', '🤪',
-            '👌', '❤️' , '🤯', '🙀'
-        ]
-
-        index = randrange(len(reaccs_msg))
-        await message.channel.send(reaccs_msg[index])
-
-        index = randrange(len(reaccs_emoji))
-        await message.add_reaction(reaccs_emoji[index])
-
-    # 'i am dead'
-    if message.content.startswith(('i am dead', 'im dead', 'i\'m dead')):
-        await message.channel.send('Target sherminated')
+        await message.channel.send(choice(reaccs_msg))
+        await message.add_reaction(choice(reaccs_emoji))
 
     # 'jsem dobrej'
-    if message.content.startswith('jsem dobrej'):
+    if message.content.startswith( ('jsem dobrej', 'jsem dobrý') ):
         if randrange(100) < 50:
             await message.add_reaction('😍')
             await message.channel.send('jasně, že jo')
@@ -58,47 +58,23 @@ async def on_message(message):
             await message.add_reaction('👎')
             await message.channel.send('haha, ne 🙂')
 
-
-    # cinema
-    if message.content.startswith('co dávají v kině'):
-        link = 'https://www.kinosusice.cz/klient-2366/kino-382/stranka-13561'
-
-        page = requests.get(link)
-        soup = BeautifulSoup(page.content, 'html.parser')
-
-        program = soup.find_all('div', class_='program')
-
-        res = ''
-        for i, movie in enumerate(program):
-            name = movie.find('h3').text
-
-            s_time = movie.find('div', class_='time')
-            day = s_time.find(class_='day').text.strip()
-            hour = s_time.find(class_='time').text.strip()
-
-            price = movie.find(class_=re.compile('price')).text
-
-            res += f'📅 {day} 🕒 {hour} 🎞 {name} 💵 {price}\n'
-
-            if i == 15: # message is too long, must be sent partially
-                await message.channel.send(res)
-                res = ''        
-        
-        await message.channel.send(res)
     
     # AT BOT
-    if message.content.startswith(bot_ids[0]) or message.content.startswith(bot_ids[1]):
+    if message.content.startswith( (bot_ids[0], bot_ids[1]) ):
         message.content = message.content.strip(bot_ids[0] + ' ')
         message.content = message.content.strip(bot_ids[1] + ' ')
 
-        # greeting
+        # pozdrav
         if message.content.startswith( ('ahoj', 'čus', 'čau', 'zdar', 'nazdar', 'zdraví','hello', 'hi', 'greetings') ):
             await message.add_reaction('👋')
             await message.channel.send(f'<@{message.author.id}> Ahoj!')
+        # nálada
+        elif message.content.startswith( ('jak je', 'jak se máš', 'jak se daří') ):
+            await message.channel.send('Veri gut. Majne taktik skusit šůšn')
         # 'kde máš boty' 
         elif message.content.startswith('kde máš boty'):
             challenged = False
-            await message.channel.send(f'<@{message.author.id}> Ve sklepě')
+            await message.channel.send('Ve sklepě')
         # 'tě sejmu'
         elif message.content.startswith('tě sejmu'):
             challenged = True
@@ -114,7 +90,7 @@ async def on_message(message):
         # other
         else:
             challenged = False
-            await message.channel.send(f'<@{message.author.id}> ?')
+            await message.channel.send(f'<@{message.author.id}> {choice(unknown_msg)}')
 
     
     await client.process_commands(message)
