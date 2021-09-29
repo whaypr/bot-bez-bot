@@ -112,46 +112,49 @@ async def menza(ctx, *args):
 
     menza_choices = '''
     Možnosti:
-    1 - ArchiCafé
-    2 - Masarykova kolej
-    3 - MEGA BUF FAT
-    4 - Kladno
-    5 - Podolí
-    6 - Strahov
-    7 - Studentský dům
-    8 - Technická
-    9 - Horská
-    10 - Karlovo náměstí 
+    0 - ArchiCafé
+    1 - Masarykova kolej
+    2 - MEGA BUF FAT
+    3 - Kladno
+    4 - Podolí
+    5 - Strahov
+    6 - Studentský dům
+    7 - Technická
+    8 - Horská
+    9 - Karlovo náměstí 
     '''
 
-    if not len(args):
-        await ctx.send(menza_choices)        
+    if len(args) == 0:
+        msg = await ctx.send(menza_choices)        
         return
 
-    if args[0] in ('1', 'archicafé', 'archicafe', 'archicaf', 'archi', 'arch', 'a'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=15')
-    elif args[0] in ('2', 'masarykova', 'masaryk', 'mas', 'm'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=5')
-    elif args[0] in ('3', 'megabuffat', 'megabufat', 'megabufet', 'megabuf', 'mega', 'bufet', 'but', 'mb'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=12')
-    elif args[0] in ('4', 'kladno', 'kladn', 'kl'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=9')
-    elif args[0] in ('5', 'podolí', 'podoli', 'podol', 'pod', 'p'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=4')
-    elif args[0] in ('6', 'strahov', 'stra', 'str', 'st'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=1')
-    elif args[0] in ('7', 'studentský', 'studentsky', 'student', 'stude', 'stud', 's'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=2')
-    elif args[0] in ('8', 'technická', 'technicka', 'techni', 'tech', 't'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=3')
-    elif args[0] in ('9', 'horská', 'horska', 'horsk', 'hor', 'h'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=6')
-    elif args[0] in ('10', 'karlák', 'karlak', 'karl', 'karlovo', 'karlov', 'k'):
-        page = requests.get('https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem=8')
+    link = 'https://agata.suz.cvut.cz/jidelnicky/index.php?clPodsystem='
+
+    if   args[0] in ('0', 'archicafé', 'archicafe', 'archicaf', 'archi', 'arch', 'a'):
+        link += '15'
+    elif args[0] in ('1', 'masarykova', 'masaryk', 'mas', 'm'):
+        link += '5'
+    elif args[0] in ('2', 'megabuffat', 'megabufat', 'megabufet', 'megabuf', 'mega', 'bufet', 'but', 'mb'):
+        link += '12'
+    elif args[0] in ('3', 'kladno', 'kladn', 'kl'):
+        link += '9'
+    elif args[0] in ('4', 'podolí', 'podoli', 'podol', 'pod', 'p'):
+        link += '4'
+    elif args[0] in ('5', 'strahov', 'stra', 'str', 'st'):
+        link += '4'
+    elif args[0] in ('6', 'studentský', 'studentsky', 'student', 'stude', 'stud', 's'):
+        link += '2'
+    elif args[0] in ('7', 'technická', 'technicka', 'techni', 'tech', 't'):
+        link += '3'
+    elif args[0] in ('8', 'horská', 'horska', 'horsk', 'hor', 'h'):
+        link += '6'
+    elif args[0] in ('9', 'karlák', 'karlak', 'karl', 'karlovo', 'karlov', 'k'):
+        link += '8'
     else:
         await ctx.send(menza_choices) 
         return
 
+    page = requests.get(link)
     soup = BeautifulSoup(page.content, 'html.parser')
 
     res = ''
@@ -176,6 +179,7 @@ async def menza(ctx, *args):
             res += f'⚖️ {weight} 🍔 {name} 💵 {price}\n'
 
     await ctx.send(res)
+
 
 @client.command(aliases=['s'], hidden=True)
 async def simp(ctx, *args):
