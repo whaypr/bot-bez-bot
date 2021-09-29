@@ -1,5 +1,4 @@
 from bot import client
-from aws import aws_s3, s3_sync, simpnotes
 
 import math as m
 import re
@@ -209,5 +208,4 @@ async def simp(ctx, *args):
             await ctx.send('Neplatná operace')    
             return
 
-    s3_sync(simpnotes)
     await show_simpnotes()
