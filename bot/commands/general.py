@@ -64,13 +64,18 @@ async def hello(ctx, *args):
 async def cute(ctx, *args):
     '''Random cute animal'''
 
-    image_number = randrange(9999)
+    subreddits = ['aww', 'Awww', 'cute_animals', 'babyanimals']
+    limit = 1
+    timeframe = 'all' #hour, day, week, month, year, all
+    listing = 'random' # controversial, best, hot, new, random, rising, top
+    base_url = f'https://www.reddit.com/r/{random.choice(subreddits)}/{listing}.json?limit={limit}&t={timeframe}'
 
-    page = requests.get(f'http://attackofthecute.com/on/?i={image_number}')
-    soup = BeautifulSoup(page.content, 'html.parser')
-    image_link = soup.find('div', class_='image').find('img')['src']
+    res = ""
+    while not res.lower().endswith(('.jpg', '.png', '.gif', '.jpeg')):
+        response = requests.get(base_url, headers = {'User-agent': 'Pure cuteness dealer'}).json()
+        res = response[0]["data"]["children"][0]["data"]["url"]
 
-    await ctx.send(image_link)
+    await ctx.send(res)
 
 
 @client.command(aliases=['k'])
