@@ -1,5 +1,5 @@
 from bot import client
-import commands, events, message_deleting, voice
+import commands, events, voice
 
 import os
 try:
