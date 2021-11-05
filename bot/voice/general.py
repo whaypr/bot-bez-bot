@@ -10,18 +10,11 @@ from discord.ext import commands
 import os
 from discord.utils import get
 
-######################################################################################
-
-playlist_path = os.path.abspath(__file__)
-playlist_path = playlist_path.rsplit('/', 1)[0] + '/playlist/'
-
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    #'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'outtmpl': playlist_path + '/' + '%(title)s.%(ext)s',
     #'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -63,6 +56,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if 'entries' in data:
             # take first item from a playlist
             data = data['entries'][0]
+bug_reports_message = lambda: ''
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
@@ -114,18 +108,8 @@ class Music(commands.Cog):
         global repeat
         repeat = False
 
-        # PLAY FROM PLAYLIST
-        if query.isnumeric():
-            try:
-                song = os.listdir(playlist_path)[int(query)]
-                song_name = song.replace('.mp3', '').replace('.webm', '')
-            except:
-                await ctx.send('Not in playlist!')
-                return
 
-            player = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(playlist_path + '/' + song))
         # PLAY FROM YOUTUBE - LINK / SEARCH
-        else:
             async with ctx.typing():
                 player = await YTDLSource.from_url(f'{query} {" ".join(args)}', loop=self.bot.loop, stream=True)
                 song_name = player.title
@@ -158,35 +142,6 @@ class Music(commands.Cog):
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
 
-    @commands.command(aliases=['pt'])
-    async def playlist(self, ctx, option, *args):
-        '''Adds/removes/shows song(s) to/from/in playlist'''
-
-        # ADD
-        if option in ('add', 'ad', 'a'):
-            try:
-                YTDLSource.download_song(*args)
-            except Exception as e:
-                await ctx.send(e)
-                return
-
-            await ctx.send('Song successfully added to playlist ✅')
-        # REMOVE
-        elif option in ('remove', 'remov', 'rm', 'r'):
-            try:
-                song = os.listdir(playlist_path)[int(args[0])]
-                os.remove(playlist_path + '/' + song)
-                await ctx.send(f'{song} has been removed from playlist ❌')
-            except:
-                await ctx.send('Not in playlist!')
-        # SHOW
-        elif option in ('show', 'sho', 's'):
-            pt = [
-                f'{num}:   👉  {song.replace(".mp3", "").replace(".webm", "")}  👈'
-                for num, song in enumerate(os.listdir(playlist_path))
-            ]
-
-            await ctx.send('\n'.join(pt))
 
     @commands.command(aliases=['pa'])
     async def panel(self, ctx):
