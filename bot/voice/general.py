@@ -1,76 +1,42 @@
 from bot import client
 
-import asyncio
+from youtube_dl.utils import bug_reports_message
+from youtube_dl import YoutubeDL
 
 import discord
-import youtube_dl
-
 from discord.ext import commands
-
-import os
 from discord.utils import get
 
 # Suppress noise about console usage from errors
-youtube_dl.utils.bug_reports_message = lambda: ''
-
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    #'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
-}
-
-ffmpeg_options = {
-    'options': '-vn'
-}
-
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-
-class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
-        super().__init__(source, volume)
-
-        self.data = data
-
-        self.title = data.get('title')
-        self.url = data.get('url')
-
-    @classmethod
-    def download_song(self, *args):
-        try:
-            ytdl.download([' '.join(args)])
-        except:
-            raise Exception('Not a valid link!')
-
-    @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-
-        if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
 bug_reports_message = lambda: ''
 
-        filename = data['url'] if stream else ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
-
-######################################################################################
-
-emoji_play_stop = '🔴'
-emoji_repeat = '🔂'
-
-control_message = ''
 
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+        self.emoji_play_stop = '🔴'
+        self.emoji_repeat = '🔁'
+
+        self.repeat = None
+        self.panel = None
+
+        self.YDL_OPTIONS = {
+            'format': 'bestaudio/best',
+            'noplaylist': True,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'logtostderr': False,
+            'quiet': True,
+            'no_warnings': True,
+            'default_search': 'auto',
+            'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
+        }
+        self.FFMPEG_OPTIONS = {
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            "options": "-vn",
+        }
+
 
     @commands.command(aliases=['j'])
     async def join(self, ctx, *, channel: discord.VoiceChannel=None):
@@ -90,6 +56,7 @@ class Music(commands.Cog):
 
         await ctx.send(f'Joined: {channel}')
 
+
     @commands.command(aliases=['l'])
     async def leave(self, ctx):
         """Leaves a voice channel"""
@@ -101,32 +68,53 @@ class Music(commands.Cog):
             print(e)
             await ctx.send('Cannot leave any channel')
 
+
     @commands.command(aliases=['p'])
-    async def play(self, ctx, query, *args):
-        """Plays song from playlist or from youtube (search or link)"""
+    async def play(self, ctx, *args):
+        """Plays song from youtube (search or link)"""
 
-        global repeat
-        repeat = False
+        # find
+        async with ctx.typing():
+            with YoutubeDL(self.YDL_OPTIONS) as ydl:
+                try:
+                    info = ydl.extract_info("ytsearch:%s" % ' '.join(args), download=False)["entries"][0]
+                except Exception as e:
+                    print(e)
+                    await ctx.send('Could not play, try again...')
+                    return
 
+            data = {
+                "url": info["formats"][0]["url"],
+                "title": info["title"],
+                "length": info["duration"],
+            }
 
-        # PLAY FROM YOUTUBE - LINK / SEARCH
-            async with ctx.typing():
-                player = await YTDLSource.from_url(f'{query} {" ".join(args)}', loop=self.bot.loop, stream=True)
-                song_name = player.title
-
+        self.repeat = False
 
         # play
-        ctx.voice_client.play(player)
+        def play_next(ctx=ctx, data=data):
+            ctx.voice_client.play(
+                discord.FFmpegPCMAudio(data['url'], **self.FFMPEG_OPTIONS),
+                after=lambda _: play_next() if self.repeat else None
+            )
+        play_next()
 
-        # control message
-        global control_message
-        try:
-            await control_message.edit( content=str(control_message.content).strip('++ ') )
-        except:
-            pass
-        control_message = await ctx.send(f"++ Playing: {song_name} 🎵")
-        await control_message.add_reaction(emoji_play_stop)
-        await control_message.add_reaction(emoji_repeat)
+        # panel
+        if (self.panel != None):
+            await self.panel.delete()
+
+        embed = discord.Embed (
+            title = 'Playing 🎵',
+            description = data['title'],
+            colour = discord.Colour.green()
+        )
+        embed.insert_field_at(0, name='LOOPING', value='❌')
+
+        self.panel = await ctx.send(embed = embed)
+
+        await self.panel.add_reaction(self.emoji_play_stop)
+        await self.panel.add_reaction(self.emoji_repeat)
+
 
     @play.before_invoke
     async def ensure_voice(self, ctx):
@@ -147,48 +135,43 @@ class Music(commands.Cog):
     async def panel(self, ctx):
         """Shows music control panel"""
 
-        global control_message
-        control_message = await ctx.send(control_message.content)
-        await control_message.add_reaction(emoji_play_stop)
-        await control_message.add_reaction(emoji_repeat)
+        if (self.panel != None):
+            await self.panel.delete()
+        self.panel = await ctx.send(self.panel.content)
+
+        await self.panel.add_reaction(self.emoji_play_stop)
+        await self.panel.add_reaction(self.emoji_repeat)
+
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user == client.user or str(reaction.message) != str(self.panel):
+            return
+
+        voice = get(client.voice_clients, guild=reaction.message.channel.guild)
+
+        if (reaction.emoji == self.emoji_play_stop):
+            if voice and voice.is_playing():
+                voice.pause()
+                self.panel.embeds[0].title = "Paused"
+                self.panel.embeds[0].color = discord.Colour.red()
+            else:
+                voice.resume()
+                self.panel.embeds[0].title = "Playing 🎵"
+                self.panel.embeds[0].color = discord.Colour.green()
+        elif (reaction.emoji == self.emoji_repeat):
+            if self.repeat:
+                self.repeat = False
+                self.panel.embeds[0].set_field_at(0, name=self.panel.embeds[0].fields[0].name, value='❌')
+            else:
+                self.repeat = True
+                self.panel.embeds[0].set_field_at(0, name=self.panel.embeds[0].fields[0].name, value='✅')
+
+        # remove reaction
+        await reaction.message.remove_reaction(reaction, user)
+
+        # edit panel
+        await self.panel.edit(embed = self.panel.embeds[0])
 
 
 client.add_cog(Music(client))
-
-######################################################################################
-
-@client.event
-async def on_reaction_add(reaction, user):
-    global control_message
-    if user == client.user or str(reaction.message) != str(control_message):
-        return
-
-    if str(reaction.emoji) == emoji_play_stop:
-        voice = get(client.voice_clients, guild=reaction.message.channel.guild)
-
-        if voice and voice.is_playing():
-            voice.pause()
-        elif voice and voice.is_paused():
-            voice.resume()
-    elif str(reaction.emoji) == emoji_repeat:
-        global repeat
-        repeat = True
-
-
-@client.event
-async def on_reaction_remove(reaction, user):
-    global control_message
-    if user == client.user or str(reaction.message) != str(control_message):
-        return
-
-    if str(reaction.emoji) == emoji_play_stop:
-        voice = get(client.voice_clients, guild=reaction.message.channel.guild)
-
-        if voice and voice.is_playing():
-            voice.pause()
-        elif voice and voice.is_paused():
-            voice.resume()
-    elif str(reaction.emoji) == emoji_repeat:
-        if reaction.count == 1:
-            global repeat
-            repeat = False
