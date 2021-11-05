@@ -135,9 +135,11 @@ class Music(commands.Cog):
     async def panel(self, ctx):
         """Shows music control panel"""
 
-        if (self.panel != None):
-            await self.panel.delete()
-        self.panel = await ctx.send(self.panel.content)
+        if (self.panel == None):
+            return
+
+        await self.panel.delete()
+        self.panel = await ctx.send(embed=self.panel.embeds[0])
 
         await self.panel.add_reaction(self.emoji_play_stop)
         await self.panel.add_reaction(self.emoji_repeat)
